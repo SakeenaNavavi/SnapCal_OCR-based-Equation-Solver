@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapCal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Jacques+Francois+Shadow&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg border-bottom border-body" id="navbar" style="background-color: #9370DB;">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/"><img src="{{ url_for('static', filename='cal.png') }}" alt="SnapCal Logo" width="30" height="30" class="d-inline-block align-text-top">SnapCal</a>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>SnapCal</h1>
+        <p class="desc">
+            Unlock the power of mathematics with SnapCal, your ultimate equation-solving companion. 
+            Simply upload an image of your equation, and let it do the rest!<br/> SnapCal not only provides the solution but also breaks down each step of the process, making complex problems easy to understand. 
+            Whether you're a student looking for homework help or a professional needing quick calculations, SnapCal is here to simplify your mathematical journey. <br/>Experience the future of learning and problem-solving with just a snap!
+        </p>
+        
+        <div class="box">
+            <h2>Upload an Image of an Equation</h2>
+            {% if error %}
+                <p class="error">{{ error }}</p>
+            {% endif %}
+            <form method="post" enctype="multipart/form-data">
+                <input type="file" name="file" accept="image/*" required>
+                <p class="note">*Psss👀 SnapCal only plays nice with images in png, jpg, jpeg, gif formats</p>
+                <button type="submit">Upload and Solve</button>
+            </form>
+        </div>
+
+        {% if equation %}
+        <div class="box">
+            <h2>Solution</h2>
+            <hr/>
+            <div class="equation">
+                <h3>Equation:</h3>
+                <p>{{ equation }}</p>
+            </div>
+            {% if error %}
+                <p class="error">{{ error }}</p>
+            {% else %}
+            <h3>Solving Steps:</h3>
+                <div class="steps">
+                    
+                    <ul>
+                        {% for step in steps %}
+                            <li>{{ step }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="solution">
+                    <h3>Your answer is:</h3>
+                    <p>{{ solution }}</p>
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
