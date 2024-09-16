@@ -50,51 +50,60 @@ def parse_and_solve_equation_with_steps(equation_text):
     steps = []
     
     try:
+        # Find the main variable in the equation
+        variables = list(set(re.findall(r'[a-zA-Z]', equation_text)))
+        main_var = variables[0] if variables else 'x'  # Default to 'x' if no variable found
+        
         # Create symbols for all variables in the equation
-        symbols = list(set(re.findall(r'[a-zA-Z]', equation_text)))
-        symbol_dict = {sym: Symbol(sym) for sym in symbols}
+        symbol_dict = {sym: Symbol(sym) for sym in variables}
         
         # Parse the equation
         left_expr = sympify(left_side, locals=symbol_dict)
         right_expr = sympify(right_side, locals=symbol_dict)
         equation = Eq(left_expr, right_expr)
-        steps.append(f" Understand the original equation\nWe start with: {left_side} = {right_side}")
+        steps.append(f"Step 1: Understand the original equation\nWe start with: {left_side} = {right_side}")
         
         # Move all terms to the left side
         equation = Eq(left_expr - right_expr, 0)
-        steps.append(f" Move all terms to the left side of the equation\nWe get: {left_side} - ({right_side}) = 0")
+        steps.append(f"Step 2: Move all terms to the left side of the equation\nWe get: {left_side} - ({right_side}) = 0")
         
         # Expand the equation
         expanded_eq = expand(equation.lhs)
         equation = Eq(expanded_eq, 0)
-        steps.append(f" Expand the equation\nAfter expanding, we have: {expanded_eq} = 0")
+        steps.append(f"Step 3: Expand the equation\nAfter expanding, we have: {expanded_eq} = 0")
         
         # Simplify the equation
         simplified_eq = simplify(equation.lhs)
         equation = Eq(simplified_eq, 0)
-        steps.append(f" Simplify the equation\nSimplifying gives us: {simplified_eq} = 0")
+        steps.append(f"Step 4: Simplify the equation\nSimplifying gives us: {simplified_eq} = 0")
         
         # Solve the equation
-        solution = solve(equation)
+        solution = solve(equation, symbol_dict[main_var])
         
         # Format the solution
         if isinstance(solution, list):
             if len(solution) == 1:
-                formatted_solution = f"x = {solution[0]}"
-                steps.append(f" Solve the equation\nThe solution is: {formatted_solution}")
+                formatted_solution = f"{main_var} = {solution[0]}"
+                steps.append(f"Step 5: Solve the equation\nThe solution is: {formatted_solution}")
             else:
-                formatted_solution = ', '.join(f"x = {sol}" for sol in solution)
-                steps.append(f" Solve the equation\nThe equation has multiple solutions:\n{formatted_solution}")
+                formatted_solution = ', '.join(f"{main_var} = {sol}" for sol in solution)
+                steps.append(f"Step 5: Solve the equation\nThe equation has multiple solutions:\n{formatted_solution}")
         elif isinstance(solution, dict):
             formatted_solution = ', '.join(f"{k} = {v}" for k, v in solution.items())
-            steps.append(f" Solve the equation\nThe solution is: {formatted_solution}")
+            steps.append(f"Step 5: Solve the equation\nThe solution is: {formatted_solution}")
         else:
-            formatted_solution = str(solution)
-            steps.append(f" Solve the equation\nThe solution is: x = {formatted_solution}")
+            formatted_solution = f"{main_var} = {solution}"
+            steps.append(f"Step 5: Solve the equation\nThe solution is: {formatted_solution}")
+        
+        # Rearrange the solution to match the original equation format
+        if len(solution) == 1 and not isinstance(solution[0], (dict, tuple)):
+            final_solution = f"{main_var} = {solution[0]}"
+        else:
+            final_solution = formatted_solution
         
         return {
             'steps': steps,
-            'solution': formatted_solution
+            'solution': final_solution
         }
     except Exception as e:
         return {
