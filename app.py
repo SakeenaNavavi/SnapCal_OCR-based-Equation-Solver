@@ -1,3 +1,4 @@
+# Import necessary libraries
 from flask import Flask, request, render_template, url_for
 import cv2
 import numpy as np
@@ -7,28 +8,35 @@ import os
 from werkzeug.utils import secure_filename
 from sympy import sympify, solve, Symbol, Eq, simplify, expand
 import re
+import logging
 
+# Initialize Flask application
 app = Flask(__name__, static_folder='static')
 
+# Configuration for file uploads
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+# Function to check if the file extension is allowed
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# Function to preprocess the uploaded image
 def preprocess_image(image_path):
     img = cv2.imread(image_path)
+    logging.warning('image received')
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, threshold = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     return threshold
 
+# Function to extract text from the preprocessed image
 def extract_text(preprocessed_image):
     custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/()=^√'
     text = pytesseract.image_to_string(Image.fromarray(preprocessed_image), config=custom_config)
     return text
 
+# Function to parse and solve the equation with step-by-step explanation
 def parse_and_solve_equation_with_steps(equation_text):
     # Clean up the equation text
     equation_text = equation_text.replace(' ', '').replace('\n', '')
@@ -111,12 +119,15 @@ def parse_and_solve_equation_with_steps(equation_text):
             'error': f"Error solving equation: {str(e)}"
         }
 
+# Route for the main page
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
+        # Check if the post request has the file part
         if 'file' not in request.files:
             return render_template('index.html', error='No file part')
         file = request.files['file']
+        # If user does not select file, browser also submits an empty part without filename
         if file.filename == '':
             return render_template('index.html', error='No selected file')
         if file and allowed_file(file.filename):
@@ -124,10 +135,12 @@ def index():
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
             
+            # Process the image and solve the equation
             preprocessed = preprocess_image(filepath)
             equation_text = extract_text(preprocessed)
             result = parse_and_solve_equation_with_steps(equation_text)
             
+            # Render the result
             return render_template('index.html', 
                                    equation=equation_text, 
                                    steps=result.get('steps', []),
@@ -135,7 +148,9 @@ def index():
                                    error=result.get('error', ''))
     return render_template('index.html')
 
+# Run the Flask app
 if __name__ == '__main__':
+    # Create necessary directories
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     if not os.path.exists('static'):
         os.makedirs('static')
