@@ -32,7 +32,7 @@ def preprocess_image(image_path):
 
 # Function to extract text from the preprocessed image
 def extract_text(preprocessed_image):
-    custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/()=^√'
+    custom_config = r'--oem 3 --psm 4 -c tessedit_char_whitelist=0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/()=^√'
     text = pytesseract.image_to_string(Image.fromarray(preprocessed_image), config=custom_config)
     return text
 
@@ -42,9 +42,16 @@ def parse_and_solve_equation_with_steps(equation_text):
     equation_text = equation_text.replace(' ', '').replace('\n', '')
     
     # Function to add multiplication symbols where implied
-    def add_mult_symbols(eq):
-        return re.sub(r'(\d+)([a-zA-Z])', r'\1*\2', eq)
     
+    def add_mult_symbols(eq):
+        # Add multiplication between numbers and variables, and around parentheses
+        eq = re.sub(r'(\d+)([a-zA-Z(])', r'\1*\2', eq)  # Handle cases like 2x or 2(x+1)
+        eq = re.sub(r'(\))(\()', r'\1*\2', eq)          # Handle cases like (x+1)(x-1)
+        eq = re.sub(r'([a-zA-Z])(\d+)', r'\1*\2', eq)   # Handle cases like x2
+        eq = re.sub(r'(log|ln)(\d+)', r'\1(\2)', eq)  # Handle cases like log2 -> log(2)
+        eq = re.sub(r'(log|ln)([a-zA-Z])', r'\1(\2)', eq)  # Handle cases like logx -> log(x)
+        return eq
+        
     # Try to parse as a standard equation (with equals sign)
     match = re.search(r'(.+)=(.+)', equation_text)
     if match:
@@ -66,8 +73,8 @@ def parse_and_solve_equation_with_steps(equation_text):
         symbol_dict = {sym: Symbol(sym) for sym in variables}
         
         # Parse the equation
-        left_expr = sympify(left_side, locals=symbol_dict)
-        right_expr = sympify(right_side, locals=symbol_dict)
+        left_expr = sympify(left_side, locals={**symbol_dict, 'log': log})
+        right_expr = sympify(right_side, locals={**symbol_dict, 'log': log})
         equation = Eq(left_expr, right_expr)
         steps.append(f"Step 1: Understand the original equation\nWe start with: {left_side} = {right_side}")
         
