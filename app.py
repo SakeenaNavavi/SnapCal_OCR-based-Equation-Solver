@@ -6,7 +6,7 @@ import pytesseract
 from PIL import Image
 import os
 from werkzeug.utils import secure_filename
-from sympy import sympify, solve, Symbol, Eq, simplify, expand
+from sympy import sympify, solve, Symbol, Eq, simplify, expand, log
 import re
 import logging
 
